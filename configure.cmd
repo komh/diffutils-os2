@@ -1,3 +1,3 @@
 extproc sh
 
-./configure --prefix=/usr --disable-gcc-warnings "$@"
+./configure --disable-gcc-warnings "$@"
