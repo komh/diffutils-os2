@@ -1,5 +1,46 @@
 GNU diffutils NEWS                                    -*- outline -*-
 
+* Noteworthy changes in release 3.7 (2018-12-31) [stable]
+
+** Bug fixes
+
+  diff --strip-trailing-cr with a single CR byte in one input file
+  would provoke an uninitialized memory read, e.g.,
+    diff -a --strip-trailing-cr <(printf '\r') <(echo a)
+  [bug introduced in 2.8 with addition of the --strip-trailing-cr option]
+
+** Improvements
+
+  diff --color now produces output compatible with less -R.
+
+
+* Noteworthy changes in release 3.6 (2017-05-21) [stable]
+
+** New features
+
+  When one file is a prefix of the other, cmp now appends the shorter
+  file's size to the EOF diagnostic.
+
+** Bug fixes
+
+  Using an invalid regular expression with --ignore-matching-lines=RE (-I)
+  no longer causes stack overflow.  Before, with an invocation like the
+  following, diff would diagnose the error, but would still proceed to
+  blow the stack: diff -Ia -I\\ <(echo) <(echo b)
+  [bug introduced in 2.9]
+
+  diff no longer mishandles line numbers exceeding 2**31 on Mingw-w64.
+
+  the ---presume-output-tty (ostensibly test-only) option would cause
+  diff --color to read an uninitialized variable
+  [bug introduced in 3.4]
+
+** Performance changes
+
+  diff's default algorithm has been tweaked to deal better with larger
+  files, reversing some of the changes made in diffutils-3.4.
+
+
 * Noteworthy changes in release 3.5 (2016-08-20) [stable]
 
 ** Bug fixes
@@ -166,7 +207,7 @@ User-visible changes in version 2.8.6:
   cmp now uses the maximal value instead of the last one.
 
 * diff now omits the ".000000000" on hosts that do not support
-  fractional time stamps.
+  fractional timestamps.
 
 Version 2.8.5 was not publicly released.
 
@@ -211,7 +252,7 @@ User-visible changes in version 2.8:
 * cmp now outputs "byte" rather than "char" outside the POSIX locale.
 * cmp -l's index column width now adjusts to fit larger (or smaller) files.
 * cmp -l -s and cmp -s -l are not allowed.  Use cmp -s or cmp -l instead.
-* diff uses ISO 8601 style time stamps for output times (e.g. "2001-11-23
+* diff uses ISO 8601 style timestamps for output times (e.g. "2001-11-23
   16:44:36.875702460 -0800") unless in the C or POSIX locale and the
   -c style is specified.
 * diff's -I and -F options use the regexp syntax of grep, not of Emacs.
@@ -377,7 +418,7 @@ User-visible changes in version 2.0:
 
 
 
-Copyright (C) 1993-1994, 1998, 2001-2002, 2004, 2006, 2009-2013, 2015-2016 Free
+Copyright (C) 1993-1994, 1998, 2001-2002, 2004, 2006, 2009-2013, 2015-2018 Free
 Software Foundation, Inc.
 
 This file is part of GNU Diffutils.

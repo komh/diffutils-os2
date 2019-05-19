@@ -1,5 +1,5 @@
 /* Test of opening a file stream.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2018 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
@@ -33,7 +33,11 @@ main ()
 {
   const char *filename = "test-freopen.txt";
 
+  close (STDIN_FILENO);
   ASSERT (freopen ("/dev/null", "r", stdin) != NULL);
+  ASSERT (getchar () == EOF);
+  ASSERT (!ferror (stdin));
+  ASSERT (feof (stdin));
 
 #if 0 /* freopen (NULL, ...) is unsupported on most platforms.  */
   /* Test that freopen() sets errno if someone else closes the stream

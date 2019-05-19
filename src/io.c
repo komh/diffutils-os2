@@ -1,7 +1,7 @@
 /* File I/O for GNU DIFF.
 
    Copyright (C) 1988-1989, 1992-1995, 1998, 2001-2002, 2004, 2006, 2009-2013,
-   2015-2016 Free Software Foundation, Inc.
+   2015-2018 Free Software Foundation, Inc.
 
    This file is part of GNU DIFF.
 
@@ -481,41 +481,32 @@ prepare_text (struct file_data *current)
 {
   size_t buffered = current->buffered;
   char *p = FILE_BUFFER (current);
+  if (!p)
+    return;
 
-  if (buffered == 0 || p[buffered - 1] == '\n')
-    current->missing_newline = false;
-  else
+  if (strip_trailing_cr)
+    {
+      char *srclim = p + buffered;
+      *srclim = '\r';
+      char *dst = rawmemchr (p, '\r');
+
+      for (char const *src = dst; src != srclim; src++)
+	{
+	  src += *src == '\r' && src[1] == '\n';
+	  *dst++ = *src;
+	}
+
+      buffered -= srclim - dst;
+    }
+
+  if (buffered != 0 && p[buffered - 1] != '\n')
     {
       p[buffered++] = '\n';
       current->missing_newline = true;
     }
 
-  if (!p)
-    return;
-
   /* Don't use uninitialized storage when planting or using sentinels.  */
   memset (p + buffered, 0, sizeof (word));
-
-  if (strip_trailing_cr)
-    {
-      char *dst;
-      char *srclim = p + buffered;
-      *srclim = '\r';
-      dst = rawmemchr (p, '\r');
-
-      if (dst != srclim)
-	{
-	  char const *src = dst;
-	  do
-	    {
-	      *dst = *src++;
-	      dst += ! (*dst == '\r' && *src == '\n');
-	    }
-	  while (src < srclim);
-
-	  buffered -= src - dst;
-	}
-    }
 
   current->buffered = buffered;
 }

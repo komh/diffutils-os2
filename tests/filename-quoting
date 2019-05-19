@@ -32,7 +32,7 @@ EOF
 mkdir a b
 echo space > "b/ " || fail=1
 for opt in '' -u -c; do
-  diff -N -r $opt a b > out 2> err; test $? = 1 || fail=1
+  returns_ 1 diff -N -r $opt a b > out 2> err || fail=1
   # Remove date and time.
   sed -e 's/^\([-+*][-+*][-+*] [^	]*\)	.*/\1/' out > k; mv k out
   compare exp-$(echo $opt|tr ' ' _) out || fail=1
@@ -53,7 +53,7 @@ x01=$(printf '\001')
 
 echo tab > "a/$tab"   || fail=1
 echo one > "b/$x01" || fail=1
-diff -u "a/$tab" "b/$x01" > out 2> err; test $? = 1 || fail=1
+returns_ 1 diff -u "a/$tab" "b/$x01" > out 2> err || fail=1
 # Remove date and time.
 sed -e 's/^\([-+*][-+*][-+*] [^	]*\)	.*/\1/' out > k; mv k out
 compare exp out || fail=1

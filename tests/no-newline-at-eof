@@ -31,8 +31,7 @@ fail=0
 # So we don't have to record trailing blanks in expected output above.
 opt=--suppress-blank-empty
 
-diff $opt -U1 a b > out 2> err
-test $? = 1 || fail=1
+returns_ 1 diff $opt -U1 a b > out 2> err || fail=1
 
 sed -n '/^@@/,$p' out > k && mv k out || fail=1
 compare exp out || fail=1
@@ -42,8 +41,7 @@ compare /dev/null err || fail=1
 # Repeat, but with a newline at the end of "a".
 echo >> a
 
-diff $opt -U1 a b > out 2> err
-test $? = 1 || fail=1
+returns_ 1 diff $opt -U1 a b > out 2> err || fail=1
 
 sed -n '/^@@/,$p' out > k && mv k out || fail=1
 compare exp2 out || fail=1
@@ -53,7 +51,6 @@ compare /dev/null err || fail=1
 # Test for Bug#18402.
 printf a > a
 printf b > b
-diff -B a b > out 2>err
-test $? = 1 || fail=1
+returns_ 1 diff -B a b > out 2>err || fail=1
 
 Exit $fail

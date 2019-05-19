@@ -1,6 +1,6 @@
 # Configure template for GNU Diffutils.
 
-# Copyright (C) 1994-1995, 1998, 2001-2002, 2004, 2006, 2009-2013, 2015-2016
+# Copyright (C) 1994-1995, 1998, 2001-2002, 2004, 2006, 2009-2013, 2015-2018
 # Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_PREREQ(2.61)
+AC_PREREQ([2.63])
 
 AC_INIT([GNU diffutils],
         m4_esyscmd([build-aux/git-version-gen .tarball-version]),
@@ -30,7 +30,7 @@ AM_INIT_AUTOMAKE([1.11 dist-xz no-dist-gzip subdir-objects
                        color-tests parallel-tests])
 AM_SILENT_RULES([yes]) # make --enable-silent-rules the default.
 
-AC_CONFIG_HEADER([lib/config.h:lib/config.hin])
+AC_CONFIG_HEADERS([lib/config.h:lib/config.hin])
 
 AC_PROG_AWK
 AC_PROG_CC
@@ -102,6 +102,7 @@ if test "$gl_gcc_warnings" = yes; then
   gl_WARN_ADD([-Wno-pointer-sign])     # Too many warnings for now
   gl_WARN_ADD([-Wno-unused-parameter]) # Too many warnings for now
   gl_WARN_ADD([-Wno-format-nonliteral])
+  gl_WARN_ADD([-Wno-cast-function-type]) # For sig-handler.h:47
 
   # In spite of excluding -Wlogical-op above, it is enabled, as of
   # gcc 4.5.0 20090517, and it provokes warnings in cat.c, dd.c, truncate.c

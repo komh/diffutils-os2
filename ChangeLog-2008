@@ -1068,7 +1068,7 @@
 	(Standards conformance): New chapter.
 	(Binary): Differing binary files are trouble unless the user asked for
 	brief output.
-	(Detailed Context): Prefer ISO time stamp format in discussion.
+	(Detailed Context): Prefer ISO timestamp format in discussion.
 	(Detailed Unified, Pagination): Likewise.
 	(Less Context): Likewise.  Also use short option.
 	(Alternate Names): Separate option from arg.
@@ -1189,7 +1189,7 @@
 	likewise for -u and -U 3.
 	Use specify_style and specify_value.
 	(SIGCHLD): Do not define; now done in a header.
-	Use new style time stamp format for -u / -U.
+	Use new style timestamp format for -u / -U.
 	Reject numeric-string options if operating in POSIX 1003.1-2001 mode.
 	Avoid overflow problems with tab width.
 	Simplify from-file and to-file code.
@@ -1956,7 +1956,7 @@
 	(TIMESPEC_NS): New macro.
 	(nstrftime): New decl.
 	(print_context_label): Use nstrftime and time_format to format times.
-	Print numeric time stamp value if localtime fails.
+	Print numeric timestamp value if localtime fails.
 	(print_context_function): New function.
 	(pr_context_hunk, pr_unidiff_hunk): Use it.
 	(find_function): Use size_t for sizes, not int.
@@ -2538,7 +2538,7 @@ Thu Sep 22 16:47:00 1994  Paul Eggert  <eggert@twinsun.com>
 	(binprefix): Removed.
 	(distfiles): Add stamp-h.in.
 	(clean): Clean stamp-h.
-	(config.hin, config.h): Use time stamp files.
+	(config.hin, config.h): Use timestamp files.
 	(cmp_o): Add $(LIBOBJS).
 	(install): Install info files from srcdir if they're not in `.'.
 
@@ -4265,7 +4265,7 @@ Thu Nov  3 16:30:24 1988  Randall Smith  (randy at gluteus.ai.mit.edu)
 
 	-----
 
-	Copyright (C) 1988-1994, 1997-2002, 2004, 2006, 2009-2013, 2015-2016
+	Copyright (C) 1988-1994, 1997-2002, 2004, 2006, 2009-2013, 2015-2018
 	Free Software Foundation, Inc.
 
 	Copying and distribution of this file, with or without

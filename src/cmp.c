@@ -1,7 +1,7 @@
-/* cmp - compare two files byte by byte
+/* GNU cmp - compare two files byte by byte
 
    Copyright (C) 1990-1996, 1998, 2001-2002, 2004, 2006-2007, 2009-2013,
-   2015-2016 Free Software Foundation, Inc.
+   2015-2018 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include <c-stack.h>
 #include <cmpbuf.h>
+#include "die.h"
 #include <error.h>
 #include <exitfail.h>
 #include <file-type.h>
@@ -114,9 +115,8 @@ try_help (char const *reason_msgid, char const *operand)
 {
   if (reason_msgid)
     error (0, 0, _(reason_msgid), operand);
-  error (EXIT_TROUBLE, 0,
+  die (EXIT_TROUBLE, 0,
 	 _("Try '%s --help' for more information."), program_name);
-  abort ();
 }
 
 static char const valid_suffixes[] = "kKMGTPEZY0";
@@ -152,9 +152,9 @@ static void
 check_stdout (void)
 {
   if (ferror (stdout))
-    error (EXIT_TROUBLE, 0, "%s", _("write failed"));
+    die (EXIT_TROUBLE, 0, "%s", _("write failed"));
   else if (fclose (stdout) != 0)
-    error (EXIT_TROUBLE, errno, "%s", _("standard output"));
+    die (EXIT_TROUBLE, errno, "%s", _("standard output"));
 }
 
 static char const * const option_help_msgid[] = {
@@ -303,7 +303,7 @@ main (int argc, char **argv)
 	  if (file_desc[f1] < 0 && comparison_type == type_status)
 	    exit (EXIT_TROUBLE);
 	  else
-	    error (EXIT_TROUBLE, errno, "%s", file[f1]);
+	    die (EXIT_TROUBLE, errno, "%s", file[f1]);
 	}
     }
 
@@ -363,7 +363,7 @@ main (int argc, char **argv)
 
   for (f = 0; f < 2; f++)
     if (close (file_desc[f]) != 0)
-      error (EXIT_TROUBLE, errno, "%s", file[f]);
+      die (EXIT_TROUBLE, errno, "%s", file[f]);
   if (exit_status != EXIT_SUCCESS && comparison_type < type_no_stdout)
     check_stdout ();
   exit (exit_status);
@@ -378,6 +378,7 @@ main (int argc, char **argv)
 static int
 cmp (void)
 {
+  bool at_line_start = true;
   off_t line_number = 1;	/* Line number (1...) of difference. */
   off_t byte_number = 1;	/* Byte number (1...) of difference. */
   uintmax_t remaining = bytes;	/* Remaining number of bytes to compare.  */
@@ -421,7 +422,7 @@ cmp (void)
 	      if (r != bytes_to_read)
 		{
 		  if (r == SIZE_MAX)
-		    error (EXIT_TROUBLE, errno, "%s", file[f]);
+		    die (EXIT_TROUBLE, errno, "%s", file[f]);
 		  break;
 		}
 	      ig -= r;
@@ -443,10 +444,10 @@ cmp (void)
 
       read0 = block_read (file_desc[0], buf0, bytes_to_read);
       if (read0 == SIZE_MAX)
-	error (EXIT_TROUBLE, errno, "%s", file[0]);
+	die (EXIT_TROUBLE, errno, "%s", file[0]);
       read1 = block_read (file_desc[1], buf1, bytes_to_read);
       if (read1 == SIZE_MAX)
-	error (EXIT_TROUBLE, errno, "%s", file[1]);
+	die (EXIT_TROUBLE, errno, "%s", file[1]);
 
       smaller = MIN (read0, read1);
 
@@ -463,8 +464,11 @@ cmp (void)
 	}
 
       byte_number += first_diff;
-      if (comparison_type == type_first_diff)
-	line_number += count_newlines (buf0, first_diff);
+      if (comparison_type == type_first_diff && first_diff != 0)
+	{
+	  line_number += count_newlines (buf0, first_diff);
+	  at_line_start = buf0[first_diff - 1] == '\n';
+	}
 
       if (first_diff < smaller)
 	{
@@ -478,9 +482,9 @@ cmp (void)
 		char const *line_num = offtostr (line_number, line_buf);
 		if (!opt_print_bytes)
 		  {
-		    /* See POSIX 1003.1-2001 for this format.  This
-		       message is used only in the POSIX locale, so it
-		       need not be translated.  */
+		    /* See POSIX for this format.  This message is
+		       used only in the POSIX locale, so it need not
+		       be translated.  */
 		    static char const char_message[] =
 		      "%s %s differ: char %s, line %s\n";
 
@@ -510,9 +514,9 @@ cmp (void)
 		    printf (_("%s %s differ: byte %s, line %s is %3o %s %3o %s\n"),
 			    file[0], file[1], byte_num, line_num,
 			    c0, s0, c1, s1);
-		}
+		  }
 	      }
-	      /* Fall through.  */
+	      FALLTHROUGH;
 	    case type_status:
 	      return EXIT_FAILURE;
 
@@ -527,7 +531,7 @@ cmp (void)
 		      char const *byte_num = offtostr (byte_number, byte_buf);
 		      if (!opt_print_bytes)
 			{
-			  /* See POSIX 1003.1-2001 for this format.  */
+			  /* See POSIX for this format.  */
 			  printf ("%*s %3o %3o\n",
 				  offset_width, byte_num, c0, c1);
 			}
@@ -558,8 +562,36 @@ cmp (void)
 	{
 	  if (differing <= 0 && comparison_type != type_status)
 	    {
-	      /* See POSIX 1003.1-2001 for this format.  */
-	      fprintf (stderr, _("cmp: EOF on %s\n"), file[read1 < read0]);
+	      char const *shorter_file = file[read1 < read0];
+
+	      /* POSIX says that each of these format strings must be
+		 "cmp: EOF on %s", optionally followed by a blank and
+		 extra text sans newline, then terminated by "\n".  */
+	      if (byte_number == 1)
+		fprintf (stderr, _("cmp: EOF on %s which is empty\n"),
+			 shorter_file);
+	      else
+		{
+		  char byte_buf[INT_BUFSIZE_BOUND (off_t)];
+		  char const *byte_num = offtostr (byte_number - 1, byte_buf);
+
+		  if (comparison_type == type_first_diff)
+		    {
+		      char line_buf[INT_BUFSIZE_BOUND (off_t)];
+		      char const *line_num
+			= offtostr (line_number - at_line_start, line_buf);
+		      fprintf (stderr,
+			       (at_line_start
+				? _("cmp: EOF on %s after byte %s, line %s\n")
+				: _("cmp: EOF on %s after byte %s,"
+				    " in line %s\n")),
+			       shorter_file, byte_num, line_num);
+		    }
+		  else
+		    fprintf (stderr,
+			     _("cmp: EOF on %s after byte %s\n"),
+			     shorter_file, byte_num);
+		}
 	    }
 
 	  return EXIT_FAILURE;
@@ -607,9 +639,11 @@ count_newlines (char *buf, size_t bufsize)
   size_t count = 0;
   char *p;
   char *lim = buf + bufsize;
+  char ch = *lim;
   *lim = '\n';
   for (p = buf; (p = rawmemchr (p, '\n')) != lim; p++)
     count++;
+  *lim = ch;
   return count;
 }
 

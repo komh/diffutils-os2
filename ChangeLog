@@ -1,4 +1,385 @@
+2018-12-31  Jim Meyering  <meyering@fb.com>
+
+	version 3.7
+	* NEWS: Record release date.
+
+	maint: distribute new file, init.cfg
+	Otherwise, strip-trailing-cr would fail on a system without valgrind.
+	* tests/Makefile.am (EXTRA_DIST): Include init.cfg.
+
+2018-12-30  Dennis Lambe Jr  <malsyned@malsyned.net>
+
+	diff: adjust ANSI escapes for compatibility with less -R
+	GNU less can display ANSI-colored text with the -R flag, but this
+	support has some limitations. One of them is that if an escape
+	sequence starts on one line and ends on a different line, only the
+	first line will be colored in less.
+
+	As a result, when diff creates colored output with multi-line deletes
+	or adds, less will only color the first line.
+
+	This change resets ANSI color to the default at the end of
+	each line and restarts it at the beginning of the next. It patches
+	normal and context mode. Side-by-side already worked in my testing.
+	* src/context.c (print_context_label, pr_context_hunk): As above.
+	(pr_unidiff_hunk, print_context_header): Likewise.
+	* src/normal.c (print_normal_hunk): Likewise.
+	* tests/colors: Adjust existing tests to accommodate this.
+	* NEWS (Improvements): Mention it.
+	Proposed in http://bugs.gnu.org/31105
+
+2018-12-29  Jim Meyering  <meyering@fb.com>
+
+	tests: fix colors test on systems lacking fractional timestamp support
+	* tests/colors: The .NNNNNNNNN suffix is not printed on some systems.
+	Adapt the test to accommodate those systems.
+
+	tests: strip-trailing-cr: avoid failure with ASAN
+	Valgrind cannot operate on an ASAN-compiled binary.
+	* tests/strip-trailing-cr (valgrind): Define as no-op when diff
+	was compiled with sanitizer support.
+
+2018-12-28  Jim Meyering  <meyering@fb.com>
+
+	tests: add test for --strip-trailing-cr UMR bug
+	* tests/strip-trailing-cr: New file. Test for today's bug fix.
+	* tests/Makefile.am (TESTS): Add it.
+
+	tests: import test infrastructure from coreutils
+	* tests/init.cfg: New file, for require_valgrind_ definition (from coreutils).
+	* tests/Makefile.am (PATH): Don't set stderr_fileno_ here, since it is
+	now initialized in init.cfg.
+
+2018-12-28  Paul Eggert  <eggert@cs.ucla.edu>
+	    Jim Meyering  <jim@meyering.net>
+
+	diff: fix UMR with --strip-trailing-cr
+	Problem reported by Hongxu Chen (Bug#31935).
+	* src/io.c (prepare_text): Strip trailing CR before
+	doing the rest of the analysis.
+	* NEWS: Mention the fix.
+
+2018-12-28  Bruno Haible  <bruno@clisp.org>
+
+	tests: colors: avoid test failure on AIX 7
+	* tests/colors: Splice the argument into the printf format string.
+
+2018-12-27  Bruno Haible  <address@hidden>
+
+	maint: don't use an undocumented Autoconf macro
+	* configure.ac: Use AC_CONFIG_HEADERS instead of AC_CONFIG_HEADER.
+
+2018-12-23  Jim Meyering  <meyering@fb.com>
+
+	build: avoid build failure with --enable-gcc-warnings and latest gcc
+	* src/diff.c (usage): Assert that each line length is no longer than
+	the minimum required size of 4095.  This lets newer gcc (currently
+	9.0.0 20181219) infer that it need not issue this warning:
+	diff.c:1012:19: error: '%.*s' directive output between 0 and 2147483647
+	bytes may exceed minimum required size of 4095
+	[-Werror=format-overflow=]
+	1012 |        printf ("  %.*s", msglen, msg);
+
+	build: update gnulib to latest; and bootstrap and init.sh
+
+	build: make the autoconf-2.63 requirement explicit
+	* configure.ac: AC_PREREQ: Require 2.63, not 2.59. And quote properly.
+	Autoconf-2.63 has been required for some time via gnulib.
+	This merely makes it explicit.
+
+2018-12-20  Jim Meyering  <meyering@fb.com>
+
+	maint: use https: in gnu mirror URL prefix, not http
+	This appears in the generated release announcement message.
+	* cfg.mk (url_dir_list): Use https: prefix, not http:.
+
+2018-07-24  Paul Eggert  <eggert@cs.ucla.edu>
+
+	cmp: fix bug in -b diagnostic
+	Problem reported by mancha (Bug#32249).
+	* src/cmp.c (count_newlines): Restore old value of sentinel.
+	* tests/cmp: Test for the bug.
+
+	build: update gnulib submodule to latest
+
+2018-05-14  Paul Eggert  <eggert@cs.ucla.edu>
+
+	doc: prepend "GNU" to NAME in man pages
+	Requested by RMS.
+	* src/cmp.c, src/diff.c, src/diff3.c, src/sdiff.c:
+	Prepend "GNU" to first comment, so that the man page says "GNU".
+
+2018-04-20  Paul Eggert  <eggert@cs.ucla.edu>
+
+	sdiff: port to mingw
+	Problem reported by Ross Burton (Bug#31218).
+	* src/sdiff.c (checksigs): Use ‘raise’, not ‘kill’.
+
+2018-03-23  Paul Eggert  <eggert@cs.ucla.edu>
+
+	build: update gnulib submodule to latest
+
+2018-01-14  Jim Meyering  <meyering@fb.com>
+
+	tests: fix quoting error in previous change
+	* tests/colors: Double-quote $PATH.
+
+2018-01-06  Jim Meyering  <meyering@fb.com>
+
+	tests: port tests/colors to some env-munging shell
+	* tests/colors: Also set PATH="$PATH" in env invocation.
+
+	maint: update gnulib and copyright dates for 2018
+	* gnulib: Update to latest.
+	* all files: Run "make update-copyright".
+	* bootstrap: Update from gnulib.
+
+	maint: suppress gcc's new -Wcast-function-type in gnulib
+	* configure.ac (WERROR_CFLAGS): Suppress gcc's new -Wcast-function-type
+	warning in gnulib, because it would trigger on this:
+	sig-handler.h:47:12: error: cast between incompatible function types\
+	  from 'void (* const)(int,  siginfo_t *, void *)' \
+	  {aka 'void (* const)(int,  struct <anonymous> *, void *)'} \
+	  to 'void (*)(int)' [-Werror=cast-function-type]
+	return (sa_handler_t) a->sa_sigaction;
+
+2017-10-22  Jim Meyering  <meyering@fb.com>
+
+	tests: add expected-failing test for minor subopimality
+	In some unusual cases, diff -u prints suboptimal output.
+	* tests/large-subopt: New test script.
+	* tests/Makefile.am (TESTS): Add it.
+	(XFAIL_TESTS): Add it here, too, to record that this test is
+	currently expected to fail.
+	* tests/large-subopt.in1, tests/large-subopt.in2: Inputs derived from
+	those in http://bugs.gnu.org/28796
+
+2017-09-23  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest
+
+2017-05-21  Jim Meyering  <meyering@fb.com>
+
+	maint: make the announcement template Cc the devel- list
+	* cfg.mk (announcement_Cc_): Define.
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
+
+	version 3.6
+	* NEWS: Record release date.
+
+2017-05-19  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest
+
+2017-05-18  Jim Meyering  <meyering@fb.com>
+
+	maint: update to work with GCC7's -Werror=implicit-fallthrough=
+	* src/system.h (FALLTHROUGH): Define.
+	Use new FALLTHROUGH macro in place of comments
+	* src/cmp.c: FIXME
+	* src/diff3.c: FIXME
+	* src/ifdef.c: FIXME
+	* src/sdiff.c: FIXME
+	* src/side.c: FIXME
+	* src/util.c: FIXME
+
+	gnulib: update to latest
+
+2017-05-09  Jim Meyering  <meyering@fb.com>
+
+	tests: new-file: closed-stdin: also ensure stdout was empty
+	* tests/new-file: Also require that "out" be empty.
+
+2017-05-06  Jim Meyering  <meyering@fb.com>
+
+	maint: stop using @acronym{...} in texinfo sources
+	* doc/diffutils.texi: Remove all uses of @acronym{...},
+	per recommendation by Karl Berry.
+	* cfg.mk (local-checks-to-skip): Remove exemption, enabling
+	the @acronym{-prohibiting syntax-check rule.
+
+2017-05-05  Paul Eggert  <eggert@cs.ucla.edu>
+
+	cmp: improve EOF diagnostic
+	This improves on yesterday's change, following up on a
+	remark by Jim Meyering (Bug#22816#21).
+	* doc/diffutils.texi (Invoking cmp, cmp Options): Follow POSIX more
+	closely in the documentation of the information appended to the EOF
+	diagnostic.
+	* src/cmp.c (cmp): Be more specific about the shorter file's length
+	and fix some off-by-1 issues in reporting line counts.
+	* tests/cmp: Adjust to match new behavior.
+	Don't assume internal details about stdio buffering.
+
+2017-05-04  Benno Schulenberg  <bensberg@justemail.net>
+
+	diff: describe each --help option with a single string
+	* src/diff.c: To ease translating, fuse four description pieces
+	into two whole ones.  Also reword and rewrap one of them to fit
+	within eighty characters.
+
+2017-05-04  Paul Eggert  <eggert@cs.ucla.edu>
+
+	cmp: report prefix length when one file is shorter
+	Requested by Dan Jacobson (Bug#22816).
+	* NEWS:
+	* doc/diffutils.texi (Invoking cmp, cmp Options): Document this.
+	* src/cmp.c (cmp): Implement it.
+	* tests/Makefile.am (TESTS): Add cmp.
+	* tests/cmp: New file.
+
+2017-05-02  Jim Meyering  <meyering@fb.com>
+
+	tests: add test for latest fix
+	* NEWS (Bug fixes): Describe it.
+	* tests/invalid-re: New test for just-fixed bug.
+	* tests/Makefile.am (TESTS): Add it.
+
+	gnulib: update to latest
+
+2017-04-27  Paul Eggert  <eggert@cs.ucla.edu>
+
+	diff: don't crash if regexp is invalid
+	Problem reported by Marcel Böhme in:
+	http://lists.gnu.org/archive/html/bug-diffutils/2017-04/msg00002.html
+	* src/diff.c (add_regexp): Exit if re_compile_pattern fails.
+
+2017-03-24  julama  <julama@fake-box.com>
+
+	tests: avoid false failure for unreadable /proc/cmdline
+	* tests/brief-vs-stat-zero-kernel-lies: Use "test -r" rather than
+	just "test -f".  This avoids a false test failure on a linux system
+	with grsecurity and its GRKERNSEC_PROC_USER option enabled, for which
+	/proc/cmdline is unreadable.  Reported in https://bugs.gnu.org/26155
+
+2017-02-01  Jim Meyering  <meyering@fb.com>
+
+	tests: avoid false failure with some shells on debian, freebsd
+	* tests/colors: Move the TERM=dumb setting into the code run by
+	"returns_", since some shells do not propagate envvar setting through
+	to a use of a function like this.  That would cause this test to fail
+	because results were colorized when they should not have been.
+	Reported by Nelson Beebe.
+
+2017-01-31  Jim Meyering  <meyering@fb.com>
+
+	maint: add "introduced in 3.4" in latest NEWS entry
+	* NEWS: Update.  Also, thanks to Nelson Beebe for reporting this.
+
+	diff: avoid UMR with ---presume-output-tty
+	* src/diff.c (main): Always define presume_output_tty.
+	Otherwise, it would be read uninitialized.
+	Introduced in v3.3-45-g17e2698
+	* NEWS (Bug fixes): Mention it.
+
+	gnulib: update to latest; and update bootstrap and init.sh
+
+	maint: change "time stamp" to "timestamp" globally
+	This avoids a new syntax-check failure.
+	* ChangeLog-2008: Perform that change.
+	* doc/diffutils.texi: Likewise.
+	* NEWS: Likewise.
+	* cfg.mk: Update the old news hash accordingly.
+
+2017-01-01  Jim Meyering  <meyering@fb.com>
+
+	maint: update gnulib and copyright dates for 2017
+	* gnulib: Update to latest.
+	* all files: Run "make update-copyright".
+
+2016-11-08  Jim Meyering  <meyering@fb.com>
+
+	tests: use "returns_" rather than explicit comparison with "$?"
+	* tests/colors: Use "returns_ 1" rather than testing $? = 1
+	* tests/basic: Likewise.
+	* tests/binary: Likewise.
+	* tests/filename-quoting: Likewise.
+	* tests/function-line-vs-leading-space: Likewise.
+	* tests/ignore-matching-lines: Likewise.
+	* tests/label-vs-func: Likewise.
+	* tests/new-file: Likewise.
+	* tests/no-dereference: Likewise.
+	* tests/no-newline-at-eof: Likewise.
+	* tests/stdin: Likewise.
+
+2016-10-25  Paul Eggert  <eggert@cs.ucla.edu>
+
+	diff: fix big performance degradation in 3.4
+	* NEWS, doc/diffutils.texi (Overview): Document this.
+	* src/analyze.c (diff_2_files): Restore too_expensive heuristic,
+	but this time with a floor that is 16 times the old floor.  This
+	should fix Bug#16848, by generating good-quality output for its
+	test case, while not introducing Bug#24715, by running nearly as
+	fast as diff-3.3 for that test case.
+
+	build: update gnulib submodule to latest
+
+2016-10-16  Jim Meyering  <meyering@fb.com>
+
+	maint: use die rather than error
+	Use "die (N, ..." rather than "error (N, ..." whenever N is a nonzero
+	constant.  That lets the compiler know that control never goes beyond
+	that point, and thus makes unnecessary the occasional following
+	"abort ();" or "break;" statement we have historically added to inform
+	static analysis tools of this aspect of "error" semantics.
+	* src/die.h: New file.
+	* src/Makefile.am (noinst_HEADERS): Add it.
+	* src/cmp.c: Use die in place of error whenever the first
+	argument is a nonzero constant.  Also remove any immediately-
+	following call to abort, and include "die.h".
+	* src/diff.c: Likewise.
+	* src/diff3.c: Likewise.
+	* src/sdiff.c: Likewise.
+	* src/util.c: Likewise.
+
+2016-10-02  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest
+
+	build: avoid GCC 7's new warnings
+	* src/util.c (get_funky_string): Adjust comment so that GCC 7's
+	-Wimplicit-fallthrough recognizes it.
+	* src/diff3.c (main): Cast boolean MERGE to "int" to avoid this:
+	diff3.c:341:25: error: '~' on a boolean expression \
+	[-Werror=bool-operation]
+
+2016-08-30  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest
+
+2016-08-29  Jim Meyering  <meyering@fb.com>
+
+	gnulib: update to latest, to port to upcoming GCC 7
+	This fixes compilation errors when using gcc-7-to-be that were
+	due to missing backslashes in gnulib's intprops.h and an API
+	change in functions like __builtin_add_overflow.  This ports
+	to GCC 7's newer built-in overflow-checking functions.
+
+2016-08-28  Paul Eggert  <eggert@cs.ucla.edu>
+
+	diff: don't assume ptrdiff_t <= long long int
+	* src/system.h (printint, pI): Port to (theoretical) platforms
+	where ptrdiff_t is wider than long long int (Bug#24311).
+
+2016-08-27  Paul Eggert  <eggert@cs.ucla.edu>
+
+	diff: port line numbers to mingw64
+	Problem reported by Peter Rosin (Bug#24311).
+	* src/system.h (printint, pI): New typedef and macro.
+	All uses of 'long int' and "%l" in printf format replaced by
+	'printint' and "%"pI respectively.
+	* src/ifdef.c (do_printf_spec): Don't assume pI is length 1.
+
 2016-08-20  Jim Meyering  <meyering@fb.com>
+
+	maint: post-release administrivia
+	* NEWS: Add header line for next release.
+	* .prev-version: Record previous version.
+	* cfg.mk (old_NEWS_hash): Auto-update.
 
 	version 3.5
 	* NEWS: Record release date.

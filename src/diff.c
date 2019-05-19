@@ -1,7 +1,7 @@
-/* diff - compare files line by line
+/* GNU diff - compare files line by line
 
    Copyright (C) 1988-1989, 1992-1994, 1996, 1998, 2001-2002, 2004, 2006-2007,
-   2009-2013, 2015-2016 Free Software Foundation, Inc.
+   2009-2013, 2015-2018 Free Software Foundation, Inc.
 
    This file is part of GNU DIFF.
 
@@ -20,6 +20,7 @@
 
 #define GDIFF_MAIN
 #include "diff.h"
+#include "die.h"
 #include <assert.h>
 #include "paths.h"
 #include <c-stack.h>
@@ -295,6 +296,7 @@ main (int argc, char **argv)
   ignore_regexp_list.buf = &ignore_regexp;
   re_set_syntax (RE_SYNTAX_GREP | RE_NO_POSIX_BACKTRACKING);
   excluded = new_exclude ();
+  presume_output_tty = false;
 
   /* Decode the options.  */
 
@@ -816,7 +818,7 @@ add_regexp (struct regexp_list *reglist, char const *pattern)
   char const *m = re_compile_pattern (pattern, patlen, reglist->buf);
 
   if (m != 0)
-    error (0, 0, "%s: %s", pattern, m);
+    error (EXIT_TROUBLE, 0, "%s: %s", pattern, m);
   else
     {
       char *regexps = reglist->regexps;
@@ -862,7 +864,7 @@ summarize_regexp_list (struct regexp_list *reglist)
 	  char const *m = re_compile_pattern (reglist->regexps, reglist->len,
 					      reglist->buf);
 	  if (m)
-	    error (EXIT_TROUBLE, 0, "%s: %s", reglist->regexps, m);
+	    die (EXIT_TROUBLE, 0, "%s: %s", reglist->regexps, m);
 	}
     }
 }
@@ -872,9 +874,8 @@ try_help (char const *reason_msgid, char const *operand)
 {
   if (reason_msgid)
     error (0, 0, _(reason_msgid), operand);
-  error (EXIT_TROUBLE, 0, _("Try '%s --help' for more information."),
+  die (EXIT_TROUBLE, 0, _("Try '%s --help' for more information."),
 	 program_name);
-  abort ();
 }
 
 static void
@@ -970,10 +971,10 @@ static char const * const option_help_msgid[] = {
   N_("-d, --minimal            try hard to find a smaller set of changes"),
   N_("    --horizon-lines=NUM  keep NUM lines of the common prefix and suffix"),
   N_("    --speed-large-files  assume large files and many scattered small changes"),
-  N_("    --color[=WHEN]       colorize the output; WHEN can be 'never', 'always',"),
-  N_("                           or 'auto' (the default)"),
-  N_("    --palette=PALETTE    specify the colors to use when --color is active"),
-  N_("                           PALETTE is a colon-separated list terminfo capabilities"),
+  N_("    --color[=WHEN]       colorize the output; WHEN can be 'never', 'always',\n"
+     "                           or 'auto' (the default)"),
+  N_("    --palette=PALETTE    the colors to use when --color is active; PALETTE is\n"
+     "                           a colon-separated list of terminfo capabilities"),
   "",
   N_("    --help               display this help and exit"),
   N_("-v, --version            output version information and exit"),
@@ -1008,6 +1009,9 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 	  while ((nl = strchr (msg, '\n')))
 	    {
 	      int msglen = nl + 1 - msg;
+	      /* This assertion is solely to avoid a warning from
+		 gcc's -Wformat-overflow=.  */
+	      assert (msglen < 4096);
 	      printf ("  %.*s", msglen, msg);
 	      msg = nl + 1;
 	    }

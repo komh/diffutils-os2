@@ -19,7 +19,7 @@ label:
 EOF
 
 sed s/1/2/ a > b || fail=1
-diff -p -u0 a b > out 2> err; test $? = 1 || fail=1
+returns_ 1 diff -p -u0 a b > out 2> err || fail=1
 
 tail -3 out > k && mv k out || fail=1
 

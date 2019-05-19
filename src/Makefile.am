@@ -1,6 +1,6 @@
 # Automakefile for GNU diffutils programs.
 
-# Copyright (C) 2001-2002, 2006, 2009-2013, 2015-2016 Free Software Foundation,
+# Copyright (C) 2001-2002, 2006, 2009-2013, 2015-2018 Free Software Foundation,
 # Inc.
 
 # This program is free software: you can redistribute it and/or modify
@@ -43,7 +43,10 @@ sdiff_SOURCES = sdiff.c
 diff_SOURCES = \
   analyze.c context.c diff.c dir.c ed.c ifdef.c io.c \
   normal.c side.c util.c
-noinst_HEADERS = diff.h system.h
+noinst_HEADERS =	\
+  die.h			\
+  diff.h		\
+  system.h
 
 MOSTLYCLEANFILES = paths.h paths.ht
 

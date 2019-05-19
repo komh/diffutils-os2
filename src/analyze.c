@@ -1,7 +1,7 @@
 /* Analyze file differences for GNU DIFF.
 
    Copyright (C) 1988-1989, 1992-1995, 1998, 2001-2002, 2004, 2006-2007,
-   2009-2013, 2015-2016 Free Software Foundation, Inc.
+   2009-2013, 2015-2018 Free Software Foundation, Inc.
 
    This file is part of GNU DIFF.
 
@@ -534,6 +534,7 @@ diff_2_files (struct comparison *cmp)
     {
       struct context ctxt;
       lin diags;
+      lin too_expensive;
 
       /* Allocate vectors for the results of comparison:
 	 a flag for each line of each file, saying whether that line
@@ -565,11 +566,19 @@ diff_2_files (struct comparison *cmp)
 
       ctxt.heuristic = speed_large_files;
 
+      /* Set TOO_EXPENSIVE to be the approximate square root of the
+	 input size, bounded below by 4096.  4096 seems to be good for
+	 circa-2016 CPUs; see Bug#16848 and Bug#24715.  */
+      too_expensive = 1;
+      for (;  diags != 0;  diags >>= 2)
+	too_expensive <<= 1;
+      ctxt.too_expensive = MAX (4096, too_expensive);
+
       files[0] = cmp->file[0];
       files[1] = cmp->file[1];
 
       compareseq (0, cmp->file[0].nondiscarded_lines,
-		  0, cmp->file[1].nondiscarded_lines, &ctxt);
+		  0, cmp->file[1].nondiscarded_lines, minimal, &ctxt);
 
       free (ctxt.fdiag - (cmp->file[1].nondiscarded_lines + 1));
 

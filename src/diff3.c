@@ -1,7 +1,7 @@
-/* diff3 - compare three files line by line
+/* GNU diff3 - compare three files line by line
 
    Copyright (C) 1988-1989, 1992-1996, 1998, 2001-2002, 2004, 2006, 2009-2013,
-   2015-2016 Free Software Foundation, Inc.
+   2015-2018 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 
 #include <c-stack.h>
 #include <cmpbuf.h>
+#include "die.h"
 #include <error.h>
 #include <exitfail.h>
 #include <file-type.h>
@@ -300,10 +301,10 @@ main (int argc, char **argv)
 	  break;
 	case 'X':
 	  overlap_only = true;
-	  /* Fall through.  */
+	  FALLTHROUGH;
 	case 'E':
 	  flagging = true;
-	  /* Fall through.  */
+	  FALLTHROUGH;
 	case 'e':
 	  incompat++;
 	  break;
@@ -338,7 +339,9 @@ main (int argc, char **argv)
 	}
     }
 
-  edscript = incompat & ~merge;  /* -AeExX3 without -m implies ed script.  */
+  /* -AeExX3 without -m implies ed script.  */
+  edscript = incompat & ~(int) merge;
+
   show_2nd |= ~incompat & merge;  /* -m without -AeExX3 implies -A.  */
   flagging |= ~incompat & merge;
 
@@ -401,7 +404,7 @@ main (int argc, char **argv)
 	if (stat (file[i], &statb) < 0)
 	  perror_with_exit (file[i]);
 	else if (S_ISDIR (statb.st_mode))
-	  error (EXIT_TROUBLE, EISDIR, "%s", file[i]);
+	  die (EXIT_TROUBLE, EISDIR, "%s", file[i]);
       }
 
 #ifdef SIGCHLD
@@ -455,9 +458,8 @@ try_help (char const *reason_msgid, char const *operand)
 {
   if (reason_msgid)
     error (0, 0, _(reason_msgid), operand);
-  error (EXIT_TROUBLE, 0,
+  die (EXIT_TROUBLE, 0,
 	 _("Try '%s --help' for more information."), program_name);
-  abort ();
 }
 
 static void
@@ -1317,7 +1319,7 @@ read_diff (char const *filea,
   status = ! werrno && WIFEXITED (wstatus) ? WEXITSTATUS (wstatus) : INT_MAX;
 
   if (EXIT_TROUBLE <= status)
-    error (EXIT_TROUBLE, werrno,
+    die (EXIT_TROUBLE, werrno,
 	   _(status == 126
 	     ? "subsidiary program '%s' could not be invoked"
 	     : status == 127
@@ -1428,20 +1430,20 @@ output_diff3 (FILE *outputfile, struct diff3_block *diff,
 	  int realfile = mapping[i];
 	  lin lowt = D_LOWLINE (ptr, realfile);
 	  lin hight = D_HIGHLINE (ptr, realfile);
-	  long int llowt = lowt;
-	  long int lhight = hight;
+	  printint llowt = lowt;
+	  printint lhight = hight;
 
 	  fprintf (outputfile, "%d:", i + 1);
 	  switch (lowt - hight)
 	    {
 	    case 1:
-	      fprintf (outputfile, "%lda\n", llowt - 1);
+	      fprintf (outputfile, "%"pI"da\n", llowt - 1);
 	      break;
 	    case 0:
-	      fprintf (outputfile, "%ldc\n", llowt);
+	      fprintf (outputfile, "%"pI"dc\n", llowt);
 	      break;
 	    default:
-	      fprintf (outputfile, "%ld,%ldc\n", llowt, lhight);
+	      fprintf (outputfile, "%"pI"d,%"pI"dc\n", llowt, lhight);
 	      break;
 	    }
 
@@ -1495,19 +1497,18 @@ dotlines (FILE *outputfile, struct diff3_block *b, int filenum)
 
 /* Output to OUTPUTFILE a '.' line.  If LEADING_DOT is true, also
    output a command that removes initial '.'s starting with line START
-   and continuing for NUM lines.  (START is long int, not lin, for
-   convenience with printf %ld formats.)  */
+   and continuing for NUM lines.  */
 
 static void
-undotlines (FILE *outputfile, bool leading_dot, long int start, lin num)
+undotlines (FILE *outputfile, bool leading_dot, printint start, printint num)
 {
   fputs (".\n", outputfile);
   if (leading_dot)
     {
       if (num == 1)
-	fprintf (outputfile, "%lds/^\\.//\n", start);
+	fprintf (outputfile, "%"pI"ds/^\\.//\n", start);
       else
-	fprintf (outputfile, "%ld,%lds/^\\.//\n", start, start + num - 1);
+	fprintf (outputfile, "%"pI"d,%"pI"ds/^\\.//\n", start, start + num - 1);
     }
 }
 
@@ -1548,7 +1549,7 @@ output_diff3_edscript (FILE *outputfile, struct diff3_block *diff,
 	   ? DIFF_ALL
 	   : DIFF_1ST + rev_mapping[b->correspond - DIFF_1ST]);
 
-      long int low0, high0;
+      printint low0, high0;
 
       /* If we aren't supposed to do this output block, skip it.  */
       switch (type)
@@ -1569,7 +1570,7 @@ output_diff3_edscript (FILE *outputfile, struct diff3_block *diff,
 
 	  /* Mark end of conflict.  */
 
-	  fprintf (outputfile, "%lda\n", high0);
+	  fprintf (outputfile, "%"pI"da\n", high0);
 	  leading_dot = false;
 	  if (type == DIFF_ALL)
 	    {
@@ -1591,7 +1592,7 @@ output_diff3_edscript (FILE *outputfile, struct diff3_block *diff,
 
 	  /* Mark start of conflict.  */
 
-	  fprintf (outputfile, "%lda\n<<<<<<< %s\n", low0 - 1,
+	  fprintf (outputfile, "%"pI"da\n<<<<<<< %s\n", low0 - 1,
 		   type == DIFF_ALL ? file0 : file1);
 	  leading_dot = false;
 	  if (type == DIFF_2ND)
@@ -1607,9 +1608,9 @@ output_diff3_edscript (FILE *outputfile, struct diff3_block *diff,
 	/* Write out a delete */
 	{
 	  if (low0 == high0)
-	    fprintf (outputfile, "%ldd\n", low0);
+	    fprintf (outputfile, "%"pI"dd\n", low0);
 	  else
-	    fprintf (outputfile, "%ld,%ldd\n", low0, high0);
+	    fprintf (outputfile, "%"pI"d,%"pI"dd\n", low0, high0);
 	}
       else
 	/* Write out an add or change */
@@ -1617,13 +1618,13 @@ output_diff3_edscript (FILE *outputfile, struct diff3_block *diff,
 	  switch (high0 - low0)
 	    {
 	    case -1:
-	      fprintf (outputfile, "%lda\n", high0);
+	      fprintf (outputfile, "%"pI"da\n", high0);
 	      break;
 	    case 0:
-	      fprintf (outputfile, "%ldc\n", high0);
+	      fprintf (outputfile, "%"pI"dc\n", high0);
 	      break;
 	    default:
-	      fprintf (outputfile, "%ld,%ldc\n", low0, high0);
+	      fprintf (outputfile, "%"pI"d,%"pI"dc\n", low0, high0);
 	      break;
 	    }
 
@@ -1775,17 +1776,15 @@ reverse_diff3_blocklist (struct diff3_block *diff)
 
   return prev;
 }
-
+
 static void
 fatal (char const *msgid)
 {
-  error (EXIT_TROUBLE, 0, "%s", _(msgid));
-  abort ();
+  die (EXIT_TROUBLE, 0, "%s", _(msgid));
 }
 
 static void
 perror_with_exit (char const *string)
 {
-  error (EXIT_TROUBLE, errno, "%s", string);
-  abort ();
+  die (EXIT_TROUBLE, errno, "%s", string);
 }

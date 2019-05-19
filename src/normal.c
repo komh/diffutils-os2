@@ -1,6 +1,6 @@
 /* Normal-format output routines for GNU DIFF.
 
-   Copyright (C) 1988-1989, 1993, 1995, 1998, 2001, 2006, 2009-2013, 2015-2016
+   Copyright (C) 1988-1989, 1993, 1995, 1998, 2001, 2006, 2009-2013, 2015-2018
    Free Software Foundation, Inc.
 
    This file is part of GNU DIFF.
@@ -59,13 +59,11 @@ print_normal_hunk (struct change *hunk)
   /* Print the lines that the first file has.  */
   if (changes & OLD)
     {
-      if (first0 <= last0)
-        set_color_context (DELETE_CONTEXT);
       for (i = first0; i <= last0; i++)
         {
+          set_color_context (DELETE_CONTEXT);
           print_1_line_nl ("<", &files[0].linbuf[i], true);
-          if (i == last0)
-            set_color_context (RESET_CONTEXT);
+          set_color_context (RESET_CONTEXT);
           if (files[0].linbuf[i + 1][-1] == '\n')
             putc ('\n', outfile);
         }
@@ -77,13 +75,11 @@ print_normal_hunk (struct change *hunk)
   /* Print the lines that the second file has.  */
   if (changes & NEW)
     {
-      if (first1 <= last1)
-        set_color_context (ADD_CONTEXT);
       for (i = first1; i <= last1; i++)
         {
+          set_color_context (ADD_CONTEXT);
           print_1_line_nl (">", &files[1].linbuf[i], true);
-          if (i == last1)
-            set_color_context (RESET_CONTEXT);
+          set_color_context (RESET_CONTEXT);
           if (files[1].linbuf[i + 1][-1] == '\n')
             putc ('\n', outfile);
         }

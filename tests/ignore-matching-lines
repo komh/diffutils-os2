@@ -39,8 +39,7 @@ cat <<'EOF' >exp
 +7
 EOF
 
-diff -u --ignore-matching-lines 3 a b >out 2>err
-test $? = 1 || fail=1
+returns_ 1 diff -u --ignore-matching-lines 3 a b >out 2>err || fail=1
 sed 1,2d out >outtail || framework_failure+
 compare exp outtail || fail=1
 

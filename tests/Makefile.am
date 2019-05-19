@@ -5,23 +5,31 @@ TESTS = \
   bignum \
   binary \
   brief-vs-stat-zero-kernel-lies \
+  cmp \
   colliding-file-names \
   diff3 \
   excess-slash \
   help-version	\
+  invalid-re	\
   function-line-vs-leading-space \
   ignore-matching-lines \
   label-vs-func	\
+  large-subopt \
   new-file \
   no-dereference \
   no-newline-at-eof \
   stdin \
   strcoll-0-names \
   filename-quoting \
+  strip-trailing-cr \
   colors
 
+XFAIL_TESTS = large-subopt
+
 EXTRA_DIST = \
-  $(TESTS) init.sh t-local.sh envvar-check
+  $(TESTS) init.cfg init.sh t-local.sh envvar-check \
+  large-subopt.in1 \
+  large-subopt.in2
 
 # Note that the first lines are statements.  They ensure that environment
 # variables that can perturb tests are unset or set to expected values.
@@ -73,7 +81,6 @@ TESTS_ENVIRONMENT =					\
   PREFERABLY_POSIX_SHELL='$(PREFERABLY_POSIX_SHELL)'	\
   REPLACE_GETCWD=$(REPLACE_GETCWD)			\
   PATH='$(abs_top_builddir)/src$(PATH_SEPARATOR)'"$$PATH"	\
-  stderr_fileno_=9					\
   ; 9>&2
 
 LOG_COMPILER= $(SHELL)

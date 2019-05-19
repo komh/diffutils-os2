@@ -10,7 +10,7 @@ fail=0
 
 # Skip the test unless we have an appropriate file.
 boot=/proc/cmdline
-test -f $boot || skip_ no $boot file
+test -r $boot || skip_ no $boot file
 sz=$(stat --format %s $boot) || skip_ stat --format %s does not work
 test $sz = 0 || skip_ $boot has nonzero size
 

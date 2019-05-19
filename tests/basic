@@ -33,7 +33,7 @@ EOF
 echo a > a
 echo b > b
 for opt in '' -u -c; do
-  diff $opt a b > out 2> err; test $? = 1 || fail=1
+  returns_ 1 diff $opt a b > out 2> err || fail=1
   # Remove date and time.
   sed -e 's/^\([-+*][-+*][-+*] [^	]*\)	.*/\1/' out > k; mv k out
   compare exp-$(echo $opt|tr ' ' _) out || fail=1
